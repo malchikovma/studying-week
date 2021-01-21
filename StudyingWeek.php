@@ -7,6 +7,7 @@ namespace StudyingWeek;
 
 class StudyingWeek
 {
+	private $dateString;
 	private $date;
 	
 	/**
@@ -17,7 +18,7 @@ class StudyingWeek
 		if ($date === null) {
 			$date = time();
 		}
-		
+		$this->dateString = (string) date('d-m-Y', $date);
 		$this->date = $date;
 	}
 
@@ -26,26 +27,24 @@ class StudyingWeek
 	 */
 	public function setDate(?int $date): void
 	{
+		$this->dateString = (string) date('d-m-Y', $date);
 		$this->date = $date;
 	}
 
-	/**
-	 * @return string|bool|null
-	 */
-	public function getDate(): ?string
+	public function __toString(): string
 	{
-		return date('d-m-Y', $this->date);
+		return $this->dateString;
 	}
 
-    /**
+	/**
      * Является ли первая учебная неделя нечетной неделей года
      * 1 неделя это начало учебного года т.е. 1 сентября, за исключением случая, когда это воскресенье
      *
      * @param $year
      * @return bool
      */
-    private function isFirstWeekTheOdd($year)
-    {
+    private function isFirstWeekTheOdd($year): bool
+	{
         // находим день недели 1 сентября текущего года
         $firstSeptember = strtotime('1 september ' . $year);
         $firstSeptemberDayOfWeek = (integer) date('N', $firstSeptember);
@@ -66,8 +65,8 @@ class StudyingWeek
      * @param number $date
      * @return bool
      */
-    private function isFirstSemesterWeekTheOdd($date)
-    {
+    private function isFirstSemesterWeekTheOdd($date): bool
+	{
         // если первый семестр, то считаем от текущего года
         // проверить четность первой недели
         $currentYear = (integer) date('Y', $date);
@@ -85,32 +84,33 @@ class StudyingWeek
      * @param number $date
      * @return bool
      */
-    private function isSecondSemesterWeekTheOdd($date)
-    {
+    private function isSecondSemesterWeekTheOdd($date): bool
+	{
         // если второй семестр, то считаем от предыдущего года
         // первая неделя года не учебная, но входит в счет
         // в примере 1 января - воскресенье, но входит в след неделю
         // судя по производственному календарю если 1 января попадает на сб или вс, то вся след неделя - каникулы
 
         // находим является ли последняя неделя нечетной
-        $lastDayOfTheYear = ((integer) date('Y', $date) - 1) . '-12-31';
-        $lastWeekOfTheYearIsOdd = $this->isFirstSemesterWeekTheOdd(strtotime($lastDayOfTheYear));
-        // если 1 янв === (сб или вс), то 1 и 2 неделя года - одна учебная неделя
+        $lastDayOfThePastYear = ((integer) date('Y', $date) - 1) . '-12-31';
+        $firstWeekOfTheYearIsOdd = !$this->isFirstSemesterWeekTheOdd(strtotime($lastDayOfThePastYear));
         $firstJanuaryDayNumber = (integer) date('N',
             strtotime(
                 date('Y', $date) . '-01-01'
             )
         );
-        if ($firstJanuaryDayNumber === 6 || $firstJanuaryDayNumber === 7) {
-            // !(четность последней недели) распространяется на вторую неделю, т.е. четные недели являются нечетными учебными неделями
-            $evenWeeksTheOdd  = !$lastWeekOfTheYearIsOdd;
+        // если первое января - пт, сб, вс, то первая учебная неделя - 3 неделя года
+		// иначе - 2 неделя года
+        if ($firstJanuaryDayNumber < 4) {
+            $oddWeeksTheOdd  = !$firstWeekOfTheYearIsOdd;
         } else {
-            $evenWeeksTheOdd = $lastWeekOfTheYearIsOdd;
+            $oddWeeksTheOdd = $firstWeekOfTheYearIsOdd;
         }
+		// является ли текущая неделя ГОДА нечетной
+		$currentWeek = (int) date('W', $date) + 1;
+        $isCurrentWeekTheOdd = (bool) (($currentWeek % 2) !== 0);
 
-        $isCurrentWeekTheOdd = (integer) date('N', $date) % 2 !== 0;
-
-        return $isCurrentWeekTheOdd == $evenWeeksTheOdd;
+        return $isCurrentWeekTheOdd === $oddWeeksTheOdd;
     }
 	
 	/**
@@ -118,7 +118,7 @@ class StudyingWeek
      *
      * @return bool
 	 */
-	public function isOdd()
+	public function isOdd(): bool
 	{
 
         $currentMonth = (integer) date('n', $this->date);
@@ -135,8 +135,8 @@ class StudyingWeek
      *
      * @return bool
      */
-    public function isEven()
-    {
+    public function isEven(): bool
+	{
         return !$this->isOdd();
     }
 }
